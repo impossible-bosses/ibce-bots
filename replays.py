@@ -1,10 +1,11 @@
 import discord
 from enum import Enum, unique
 import logging
+from typing import Any
 
 from lobbies import get_map_version
 
-_class_emoji = None
+_class_emoji: dict[Class, discord.Emoji] | None = None
 
 @unique
 class Difficulty(Enum):
@@ -40,7 +41,7 @@ class Boss(Enum):
     ANCIENT = "ancient"
     DEMONIC = "demonic"
 
-def max_bosses_in_difficulty(d):
+def max_bosses_in_difficulty(d: Difficulty) -> int:
     if d == Difficulty.VE:
         return 8
     if d == Difficulty.E:
@@ -52,7 +53,7 @@ def max_bosses_in_difficulty(d):
     if d == Difficulty.H:
         return 10
 
-def difficulty_to_short_string(d):
+def difficulty_to_short_string(d: Difficulty) -> str:
     if d == Difficulty.VE:
         return "VE"
     if d == Difficulty.E:
@@ -64,11 +65,11 @@ def difficulty_to_short_string(d):
     if d == Difficulty.H:
         return "H"
 
-def replay_id_to_url(replay_id):
+def replay_id_to_url(replay_id: int) -> str:
     return "https://impossible-bosses.github.io/ibstats/game/?id={}".format(replay_id)
 
 class PlayerStats:
-    def __init__(self, json):
+    def __init__(self, json: Any):
         self.deaths = json["deaths"]
         self.dmg = json["damage"]
         self.hl = json["healing"]
@@ -81,7 +82,21 @@ class PlayerStats:
         self.degen = json["degen"]
 
 class PlayerData:
-    def __init__(self, json):
+    name: str
+    is_host: bool
+    slot: int
+    color: str
+    class_: Class
+    health: int
+    mana: int
+    ability: int
+    ms: int
+    coins: int
+    stats_overall: PlayerStats
+    boss_kills: int
+    stats_boss: Any
+
+    def __init__(self, json: Any) -> None:
         self.name = json["name"]
         self.is_host = json["isHost"]
         self.slot = json["slot"]
@@ -107,7 +122,12 @@ class PlayerData:
                 self.boss_kills += 1
 
 class ReplayData:
-    def __init__(self, json):
+    id: int
+    game_name: str
+    map: str
+    host: str
+
+    def __init__(self, json: Any) -> None:
         game = json["body"]["data"]["game"]
         self.id = json["body"]["id"]
         self.game_name = game["name"]
@@ -175,10 +195,10 @@ class ReplayData:
         if not self.win:
             self.boss_kills = max([p.boss_kills for p in self.players])
 
-    def to_discord_embed(self):
+    def to_discord_embed(self) -> discord.Embed | None:
         if _class_emoji is None:
             logging.error("replays module used before loading emojis")
-            return
+            return None
 
         title = "{} - {}".format(
             difficulty_to_short_string(self.difficulty),
@@ -194,7 +214,7 @@ class ReplayData:
         embed.set_footer(text=self.map)
         return embed
 
-def replays_load_emojis(guild_emojis):
+def replays_load_emojis(guild_emojis: list[discord.Emoji]) -> None:
     global _class_emoji
     _class_emoji = {}
 
@@ -221,5 +241,5 @@ def replays_load_emojis(guild_emojis):
             _class_emoji[Class.WARRIOR] = emoji
 
     if len(_class_emoji) != 10:
-        raise Exception("Missing class emoji, {}/10: ".format(len(_class_emoji), _class_emoji))
+        raise Exception(f"Missing class emoji, {len(_class_emoji)}/10: ")
     logging.info("Loaded all class emoji for replays module")

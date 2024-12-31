@@ -1,16 +1,26 @@
 import discord
 import logging
+from typing import Any
 
 BELL_EMOJI = "\U0001F514"
 NOBELL_EMOJI = "\U0001F515"
 
 class MapVersion:
-    def __init__(self, file_name, ent_only=False, deprecated=False, counterfeit=False, slots=[8,11]):
+    file_name: str
+    ent_only: bool
+    deprecated: bool
+    counterfeit: bool
+    slots: list[int]
+
+    def __init__(self, file_name: str, ent_only: bool = False, deprecated: bool = False, counterfeit: bool = False, slots: list[int] | None = None):
+        slots_list = [8, 11]
+        if slots is not None:
+            slots_list = slots
         self.file_name = file_name
         self.ent_only = ent_only
         self.deprecated = deprecated
         self.counterfeit = counterfeit
-        self.slots = slots
+        self.slots = slots_list
 
 KNOWN_VERSIONS = [
     MapVersion("Impossible.Bosses.v1.11.22"),
@@ -75,13 +85,13 @@ KNOWN_VERSIONS = [
     MapVersion("Impossible Bosses BetaV1C", deprecated=True),
 ]
 
-def get_map_version(map_file):
+def get_map_version(map_file: str) -> MapVersion | None:
     for version in KNOWN_VERSIONS:
         if map_file == version.file_name:
             return version
     return None
 
-def get_map_server_nice(server):
+def get_map_server_nice(server: str) -> str:
     if server == "usw":
         return ":flag_us: US"
     elif server == "eu":
@@ -99,7 +109,14 @@ def get_map_server_nice(server):
     return server
 
 class Lobby:
-    def __init__(self, lobby_dict, is_ent):
+    is_ent: bool
+    id: int
+    name: str
+    map: str
+    host: str
+    subscribers: list[discord.Member]
+
+    def __init__(self, lobby_dict: dict[str, Any], is_ent: bool):
         self.is_ent = is_ent
         self.id = lobby_dict["id"]
         self.name = lobby_dict["name"]
@@ -118,29 +135,30 @@ class Lobby:
             self.slots_taken = lobby_dict["slotsTaken"]
             self.slots_total = lobby_dict["slotsTotal"]
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Lobby):
+            return NotImplemented
         return self.id == other.id
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.id
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "[id={} ent={} name=\"{}\" server={} map=\"{}\" host={} slots={}/{}]".format(
             self.id, self.is_ent, self.name, self.server, self.map, self.host, self.slots_taken, self.slots_total
         )
 
-    def get_message_id_key(self):
+    def get_message_id_key(self) -> str:
         return "lobbymsg{}".format(self.id)
 
-    def is_ib(self):
+    def is_ib(self) -> bool:
         #return self.map.find("Legion") != -1 and self.map.find("TD") != -1 # test
-        #return self.map.find("Uther Party") != -1 # test
         return self.map.find("Impossible") != -1 and self.map.find("Bosses") != -1
 
-    def is_updated(self, new):
+    def is_updated(self, new: Lobby) -> bool:
         return self.name != new.name or self.server != new.server or self.map != new.map or self.host != new.host or self.slots_taken != new.slots_taken or self.slots_total != new.slots_total
 
-    def to_discord_message_info(self, is_open=True):
+    def to_discord_message_info(self, is_open: bool = True) -> dict[str, str | discord.Embed]:
         COLOR_CLOSED = discord.Colour(0x8a0808)
 
         version = get_map_version(self.map)
@@ -169,7 +187,6 @@ class Lobby:
 
             if slots_total not in version.slots:
                 logging.error("Invalid total slots {}, expected {}, for map file {}".format(self.slots_total, version.slots, self.map))
-                return None
 
         title_format = "{} ({}/{})"
         description_format = "{} {}"
@@ -181,8 +198,9 @@ class Lobby:
         description = description_format.format(self.map, mark)
         host = self.host if len(self.host) > 0 else "---"
         server = get_map_server_nice(self.server)
+        color = None if is_open else COLOR_CLOSED
 
-        embed = discord.Embed(title=title, description=description)
+        embed = discord.Embed(title=title, description=description, color=color)
         embed.add_field(name="Host", value=host, inline=True)
         embed.add_field(name="Server", value=server, inline=True)
         if len(self.subscribers) > 0:
@@ -195,9 +213,6 @@ class Lobby:
                 ])
 
             embed.set_footer(text=subscribers_string)
-
-        if not is_open:
-            embed.color = COLOR_CLOSED
 
         return {
             "message": message,

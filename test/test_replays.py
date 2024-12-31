@@ -1,15 +1,18 @@
 import pytest
 import requests
+from dataclasses import dataclass
 
 from replays import ReplayData, Difficulty
 
+
+@dataclass
 class CaseWc3Stats:
-	def __init__(self, replay_id, map_file, difficulty, continues, win):
-		self.replay_id = replay_id
-		self.map_file = map_file
-		self.difficulty = difficulty
-		self.continues = continues
-		self.win = win
+    replay_id: int
+    map_file: str
+    difficulty: Difficulty
+    continues: bool
+    win: bool
+
 
 @pytest.mark.parametrize("test_case", [
 	CaseWc3Stats(
@@ -90,7 +93,7 @@ class CaseWc3Stats:
 		win=True
 	)
 ])
-def test_wc3stats_replay(test_case):
+def test_wc3stats_replay(test_case: CaseWc3Stats) -> None:
 	r = requests.get("https://api.wc3stats.com/replays/{}".format(test_case.replay_id))
 	assert r.status_code == 200
 
