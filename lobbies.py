@@ -13,15 +13,17 @@ class MapVersion:
         self.slots = slots
 
 KNOWN_VERSIONS = [
-    MapVersion("Impossible.Bosses.v1.12.2", deprecated=False),
-    MapVersion("Impossible.Bosses.v1.12.2-no-bnet", ent_only=True, deprecated=False),
-    MapVersion("Impossible.Bosses.v1.12.1", deprecated=False),
-    MapVersion("Impossible.Bosses.v1.12.1-no-bnet", ent_only=True, deprecated=False),
+    MapVersion("Impossible.Bosses.v1.12.3", deprecated=False),
+    MapVersion("Impossible.Bosses.v1.12.3-no-bnet", ent_only=True, deprecated=False),
+    MapVersion("Impossible.Bosses.v1.12.2"),
+    MapVersion("Impossible.Bosses.v1.12.2-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.12.1"),
+    MapVersion("Impossible.Bosses.v1.12.1-no-bnet", ent_only=True),
     MapVersion("Impossible.Bosses.v1.12.0"),
     MapVersion("Impossible.Bosses.v1.12.0-no-bnet", ent_only=True),
 
-    MapVersion("Impossible.Bosses.v1.11.22", deprecated=False),
-    MapVersion("Impossible.Bosses.v1.11.22-no-bnet", ent_only=True, deprecated=False),
+    MapVersion("Impossible.Bosses.v1.11.22"),
+    MapVersion("Impossible.Bosses.v1.11.22-no-bnet", ent_only=True),
     MapVersion("Impossible.Bosses.v1.11.21"),
     MapVersion("Impossible.Bosses.v1.11.21-no-bnet", ent_only=True),
     MapVersion("Impossible.Bosses.v1.11.20"),
