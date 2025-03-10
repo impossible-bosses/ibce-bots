@@ -18,6 +18,7 @@ import git
 
 from lobbies import Lobby, BELL_EMOJI, NOBELL_EMOJI
 from replays import ReplayData, replays_load_emojis, replay_id_to_url
+from enthosting import host_on_ent
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 LOGS_DIR = os.path.join(ROOT_DIR, "logs")
@@ -652,7 +653,22 @@ OKIB_EMOJI_STRING = "<:okib:{}>".format(OKIB_EMOJI_ID)
 NOIB_EMOJI_STRING = "<:noib:{}>".format(NOIB_EMOJI_ID)
 OKIB_GATHER_EMOJI_STRING = "<:ib:{}><:ib2:{}>".format(IB_EMOJI_ID, IB2_EMOJI_ID)
 OKIB_GATHER_PLAYERS = 8 # not pointless - sometimes I use this for testing
-
+TRUSTED_HOSTS = {
+    "Noway": {"discord_id": 426137665558151169, "ent_name": "Nowayouthere"},
+    "patio111": {"discord_id": 243082672304422913, "ent_name": "patio-111"},
+    "Regit": {"discord_id": 122160531741212672, "ent_name": "Regit"},
+    "Kiiskifish": {"discord_id": 268445591774822400, "ent_name": "Kiiskifish"},
+    "Ho_rdor": {"discord_id": 308286388564918275, "ent_name": "Ho_rdor"},
+    "Sverkerman": {"discord_id": 223069337261572097, "ent_name": "SverkermanEU"},
+    "hdd": {"discord_id": 270325093979127828, "ent_name": "hdd"},
+    "wirmyom":{"discord_id": 274955094234103818, "ent_name": "wirmyom"},
+    "Sexytime":{"discord_id": 655592896027820053, "ent_name": "chimp123"},
+    "degaf":{"discord_id": 185609154054848512, "ent_name": "degaf"},
+    "typical_methods":{"discord_id": 1062895834422853754, "ent_name": "typical_methods"},
+    "Daumen":{"discord_id":209817147818508300, "ent_name":"Daumen"},
+    "Photon_man24:":{"discord_id":98967257949941760, "ent_name":"Photon_man24"},
+    "Norwood Ranger":{"discord_id": 239817062782861313, "ent_name":"Norwood-Ranger" },
+}
 _okib_channel =  None
 _okib_message_id = None
 _list_content = ""
@@ -675,6 +691,40 @@ async def gather():
             #Should be an logging.error there but since this might happen quite frequently i dont want it to show as "abnormal"
             logging.warning("Error sending DM to {}, {}".format(member.name, e))
             traceback.print_exc()
+    # Step 1: Pick a host
+    selected_host = None
+    # Check if the gatherer (initiator) is in the trusted list
+    if _gatherer and _gatherer.id in {info["discord_id"] for info in TRUSTED_HOSTS.values()}:
+        selected_host = _gatherer
+
+     # If the gatherer is not in the trusted list, pick the next best trusted host
+    if not selected_host:
+        for host_name, host_info in TRUSTED_HOSTS.items():
+            for member in _okib_members:
+                if member.id == host_info["discord_id"]:  # Compare with stored Discord ID
+                    selected_host = member
+                    break
+            if selected_host:
+                break
+
+    # If no trusted host is found, fallback to the first player
+    if not selected_host:
+        selected_host = _okib_members[0] 
+
+    # Step 2: Get the ENT Gaming username
+    ent_host = None
+    for host_name, host_info in TRUSTED_HOSTS.items():
+        if selected_host.id == host_info["discord_id"]:
+            ent_host = host_info["ent_name"]
+            break
+
+    if ent_host is None:
+        ent_host = "defaultHost"  # Fallback if no mapping is found
+
+    # Step 3: Start the Playwright hosting script
+    print(f"🎮 Starting game host with {ent_host} as host...")
+    await host_on_ent(ent_host)
+    
 
 
 async def combinator3000(*args):

@@ -2,3 +2,4 @@ aiohttp
 discord.py
 gitpython
 requests
+playwright
