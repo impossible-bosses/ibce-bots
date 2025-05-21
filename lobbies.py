@@ -5,7 +5,7 @@ BELL_EMOJI = "\U0001F514"
 NOBELL_EMOJI = "\U0001F515"
 
 class MapVersion:
-    def __init__(self, file_name, ent_only=False, deprecated=False, counterfeit=False, slots=[8,11]):
+    def __init__(self, file_name, ent_only=False, deprecated=True, counterfeit=False, slots=[8,11]):
         self.file_name = file_name
         self.ent_only = ent_only
         self.deprecated = deprecated
@@ -13,66 +13,75 @@ class MapVersion:
         self.slots = slots
 
 KNOWN_VERSIONS = [
+    MapVersion("Impossible.Bosses.v1.12.3", deprecated=False),
+    MapVersion("Impossible.Bosses.v1.12.3-no-bnet", ent_only=True, deprecated=False),
+    MapVersion("Impossible.Bosses.v1.12.2"),
+    MapVersion("Impossible.Bosses.v1.12.2-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.12.1"),
+    MapVersion("Impossible.Bosses.v1.12.1-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.12.0"),
+    MapVersion("Impossible.Bosses.v1.12.0-no-bnet", ent_only=True),
+
     MapVersion("Impossible.Bosses.v1.11.22"),
     MapVersion("Impossible.Bosses.v1.11.22-no-bnet", ent_only=True),
-    MapVersion("Impossible.Bosses.v1.11.21", deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.21-no-bnet", ent_only=True, deprecated=True),
+    MapVersion("Impossible.Bosses.v1.11.21"),
+    MapVersion("Impossible.Bosses.v1.11.21-no-bnet", ent_only=True),
     MapVersion("Impossible.Bosses.v1.11.20"),
     MapVersion("Impossible.Bosses.v1.11.20-no-bnet", ent_only=True),
-    MapVersion("Impossible.Bosses.v1.11.9", deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.9-no-bnet", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.8", deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.8-no-bnet", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.7", deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.7-no-bnet", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.6", deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.6-no-bnet", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.5-no-bnet", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.4-nobnet", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.3-ent", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.2-ent", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.1-ent", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.11.0-ent", ent_only=True, deprecated=True),
+    MapVersion("Impossible.Bosses.v1.11.9"),
+    MapVersion("Impossible.Bosses.v1.11.9-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.8"),
+    MapVersion("Impossible.Bosses.v1.11.8-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.7"),
+    MapVersion("Impossible.Bosses.v1.11.7-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.6"),
+    MapVersion("Impossible.Bosses.v1.11.6-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.5-no-bnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.4-nobnet", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.3-ent", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.2-ent", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.1-ent", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.11.0-ent", ent_only=True),
 
-    MapVersion("Impossible.Bosses.v1.10.5", deprecated=True),
-    MapVersion("Impossible.Bosses.v1.10.5-ent", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.10.4-ent", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.10.3-ent", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.10.2-ent", ent_only=True, deprecated=True),
-    MapVersion("Impossible.Bosses.v1.10.1-ent", ent_only=True, deprecated=True),
+    MapVersion("Impossible.Bosses.v1.10.5"),
+    MapVersion("Impossible.Bosses.v1.10.5-ent", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.10.4-ent", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.10.3-ent", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.10.2-ent", ent_only=True),
+    MapVersion("Impossible.Bosses.v1.10.1-ent", ent_only=True),
 
-    MapVersion("Impossible_BossesReforgedV1.09Test", deprecated=True),
-    MapVersion("ImpossibleBossesEnt1.09", ent_only=True, deprecated=True),
+    MapVersion("Impossible_BossesReforgedV1.09Test"),
+    MapVersion("ImpossibleBossesEnt1.09", ent_only=True),
     MapVersion("Impossible_BossesReforgedV1.09_UFWContinues", counterfeit=True),
     MapVersion("Impossible_BossesReforgedV1.09UFW30", counterfeit=True),
-    MapVersion("Impossible_BossesReforgedV1.08Test", deprecated=True),
-    MapVersion("Impossible_BossesReforgedV1.07Test", deprecated=True),
-    MapVersion("Impossible_BossesTestversion1.06", deprecated=True),
-    MapVersion("Impossible_BossesReforgedV1.05", deprecated=True),
-    MapVersion("Impossible_BossesReforgedV1.02", deprecated=True),
+    MapVersion("Impossible_BossesReforgedV1.08Test"),
+    MapVersion("Impossible_BossesReforgedV1.07Test"),
+    MapVersion("Impossible_BossesTestversion1.06"),
+    MapVersion("Impossible_BossesReforgedV1.05"),
+    MapVersion("Impossible_BossesReforgedV1.02"),
 
-    MapVersion("Impossible Bosses BetaV3V", deprecated=True),
-    MapVersion("Impossible Bosses BetaV3R", deprecated=True),
-    MapVersion("Impossible Bosses BetaV3P", deprecated=True),
-    MapVersion("Impossible Bosses BetaV3E", deprecated=True),
-    MapVersion("Impossible Bosses BetaV3C", deprecated=True),
-    MapVersion("Impossible Bosses BetaV3A", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2X", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2W", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2S", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2J", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2F", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2E", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2D", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2C", deprecated=True),
-    MapVersion("Impossible Bosses BetaV2A", deprecated=True),
-    MapVersion("Impossible Bosses BetaV1Y", deprecated=True),
-    MapVersion("Impossible Bosses BetaV1X", deprecated=True),
-    MapVersion("Impossible Bosses BetaV1W", deprecated=True),
-    MapVersion("Impossible Bosses BetaV1V", deprecated=True),
-    MapVersion("Impossible Bosses BetaV1R", deprecated=True),
-    MapVersion("Impossible Bosses BetaV1P", deprecated=True),
-    MapVersion("Impossible Bosses BetaV1C", deprecated=True),
+    MapVersion("Impossible Bosses BetaV3V"),
+    MapVersion("Impossible Bosses BetaV3R"),
+    MapVersion("Impossible Bosses BetaV3P"),
+    MapVersion("Impossible Bosses BetaV3E"),
+    MapVersion("Impossible Bosses BetaV3C"),
+    MapVersion("Impossible Bosses BetaV3A"),
+    MapVersion("Impossible Bosses BetaV2X"),
+    MapVersion("Impossible Bosses BetaV2W"),
+    MapVersion("Impossible Bosses BetaV2S"),
+    MapVersion("Impossible Bosses BetaV2J"),
+    MapVersion("Impossible Bosses BetaV2F"),
+    MapVersion("Impossible Bosses BetaV2E"),
+    MapVersion("Impossible Bosses BetaV2D"),
+    MapVersion("Impossible Bosses BetaV2C"),
+    MapVersion("Impossible Bosses BetaV2A"),
+    MapVersion("Impossible Bosses BetaV1Y"),
+    MapVersion("Impossible Bosses BetaV1X"),
+    MapVersion("Impossible Bosses BetaV1W"),
+    MapVersion("Impossible Bosses BetaV1V"),
+    MapVersion("Impossible Bosses BetaV1R"),
+    MapVersion("Impossible Bosses BetaV1P"),
+    MapVersion("Impossible Bosses BetaV1C"),
 ]
 
 def get_map_version(map_file):
@@ -133,14 +142,14 @@ class Lobby:
         return "lobbymsg{}".format(self.id)
 
     def is_ib(self):
-        #return self.map.find("Legion") != -1 and self.map.find("TD") != -1 # test
+        # return self.map.find("Legion") != -1 and self.map.find("TD") != -1 # test
         #return self.map.find("Uther Party") != -1 # test
         return self.map.find("Impossible") != -1 and self.map.find("Bosses") != -1
 
     def is_updated(self, new):
         return self.name != new.name or self.server != new.server or self.map != new.map or self.host != new.host or self.slots_taken != new.slots_taken or self.slots_total != new.slots_total
 
-    def to_discord_message_info(self, is_open=True):
+    def to_discord_message_info(self, bnet_lobby_role, is_open):
         COLOR_CLOSED = discord.Colour(0x8a0808)
 
         version = get_map_version(self.map)
@@ -158,6 +167,10 @@ class Lobby:
         elif version.deprecated:
             mark = ":x:"
             message = ":warning: *Old map version* :warning:"
+        if not self.is_ent:
+            if len(message) > 0:
+                message += "\n"
+            message += f"{bnet_lobby_role.mention}"
 
         slots_taken = self.slots_taken
         slots_total = self.slots_total

@@ -10,6 +10,7 @@ import pickle
 import sqlite3
 import sys
 import traceback
+from dataclasses import dataclass
 
 import discord
 from discord.ext import commands, tasks
@@ -26,7 +27,29 @@ LOG_FILE_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 from params import BOT_ID, BOT_TOKEN, REBOOT_ON_UPDATE
 
 # CONSTANTS (PUBLIC)
-from constants import GUILD_NAME, BNET_CHANNEL_NAME, ENT_CHANNEL_NAME, COM_GUILD_ID, COM_CHANNEL_ID, PUB_HOST_ID, PEON_ID, SHAMAN_ID, COMMAND_CHARACTER
+import constants
+
+GUILD_NAME = getattr(constants, "GUILD_NAME", "IB CAFETERIA")
+BNET_CHANNEL_NAME = getattr(constants, "BNET_CHANNEL_NAME", "pub-games")
+ENT_CHANNEL_NAME = getattr(constants, "ENT_CHANNEL_NAME", "general-chat")
+
+COM_GUILD_ID = getattr(constants, "COM_GUILD_ID", 777162167446274048)
+COM_CHANNEL_ID = getattr(constants, "COM_CHANNEL_ID", 777162167446274051)
+
+ROLE_ID_SHAMAN = getattr(constants, "SHAMAN_ID", 431854421635366912)
+ROLE_ID_ENT_READY = getattr(constants, "PEON_ID", 431854796748619777)
+ROLE_ID_BNET_LOBBY = getattr(constants, "ROLE_ID_BNET_LOBBY", 1228087653929455646)
+ROLE_ID_EU = getattr(constants, "ROLE_ID_EU", 766268372252884994)
+ROLE_ID_KR = getattr(constants, "ROLE_ID_KR", 800299277842382858)
+ROLE_ID_NA = getattr(constants, "ROLE_ID_NA", 773269638116802661)
+
+COMMAND_CHARACTER = getattr(constants, "COMMAND_CHARACTER", "!")
+
+OKIB_EMOJI_ID = getattr(constants, "OKIB_EMOJI_ID", 506072066039087164)
+LATERIB_EMOJI_ID = getattr(constants, "LATERIB_EMOJI_ID", 624308183334125568)
+NOIB_EMOJI_ID = getattr(constants, "NOIB_EMOJI_ID", 477544228629512193)
+IB_EMOJI_ID = getattr(constants, "IB_EMOJI_ID", 451846742661398528)
+IB2_EMOJI_ID = getattr(constants, "IB2_EMOJI_ID", 590986772734017536)
 
 
 def get_source_version():
@@ -118,6 +141,25 @@ def create_client():
     return client
 
 
+@dataclass
+class DiscordObjs:
+    """
+    Contains references to Discord objects used by the bot, which will be initialized during on_ready.
+    """
+    guild: discord.Guild
+    channel_bnet: discord.TextChannel
+    channel_ent: discord.TextChannel
+    role_shaman: discord.Role
+    role_ent_ready: discord.Role
+    role_bnet_lobby: discord.Role
+    role_eu: discord.Role
+    role_kr: discord.Role
+    role_na: discord.Role
+    emoji_okib: discord.Emoji
+    emoji_laterib: discord.Emoji
+    emoji_noib: discord.Emoji
+
+
 # constants
 DB_FILE_PATH = os.path.join(ROOT_DIR, "IBCE_WARN.db")
 DB_ARCHIVE_PATH = os.path.join(ROOT_DIR, "archive", "IBCE_WARN.db")
@@ -126,10 +168,8 @@ VERSION = get_source_version()
 print("Source version {}".format(VERSION))
 
 # discord connection
-_client = create_client()
-_guild = None
-_bnet_channel = None
-_ent_channel = None
+_discord_objs: DiscordObjs | None = None
+_client: commands.Bot = create_client()
 
 # communication
 _initialized = False
@@ -208,6 +248,8 @@ def update_workspace(workspace_bytes):
     global _gathered
     global _gather_time
 
+    assert _discord_objs is not None
+
     workspace_obj = pickle.loads(workspace_bytes)
     logging.info("Updating workspace: {}".format(workspace_obj))
 
@@ -227,22 +269,22 @@ def update_workspace(workspace_bytes):
     _okib_message_id = workspace_obj["okib_message_id"]
     _list_content = workspace_obj["list_content"]
 
-    _okib_members = [_guild.get_member(mid) for mid in workspace_obj["okib_member_ids"]]
+    _okib_members = [_discord_objs.guild.get_member(mid) for mid in workspace_obj["okib_member_ids"]]
     if None in _okib_members:
         logging.error("Failed to get an OKIB member from ID, {} from {}".format(_okib_members, workspace_obj["okib_member_ids"]))
         return False
-    _laterib_members = [_guild.get_member(mid) for mid in workspace_obj["laterib_member_ids"]]
+    _laterib_members = [_discord_objs.guild.get_member(mid) for mid in workspace_obj["laterib_member_ids"]]
     if None in _laterib_members:
         logging.error("Failed to get a laterIB member from ID, {} from {}".format(_laterib_members, workspace_obj["laterib_member_ids"]))
         return False
-    _noib_members = [_guild.get_member(mid) for mid in workspace_obj["noib_member_ids"]]
+    _noib_members = [_discord_objs.guild.get_member(mid) for mid in workspace_obj["noib_member_ids"]]
     if None in _noib_members:
         logging.error("Failed to get a member from ID, {} from {}".format(_noib_members, workspace_obj["noib_member_ids"]))
         return False
 
     gatherer_id = workspace_obj["gatherer_id"]
     if gatherer_id != None:
-        _gatherer = _guild.get_member(gatherer_id)
+        _gatherer = _discord_objs.guild.get_member(gatherer_id)
         if _gatherer == None:
             logging.error("Failed to get member from id {}".format(gatherer_id))
             return False
@@ -508,19 +550,11 @@ async def update(ctx, bot_id):  # TODO default bot_id=None ??
 
 @_client.event
 async def on_ready():
-    global _guild
-    global _bnet_channel
-    global _ent_channel
+    global _discord_objs
     global _com_channel
     global _initialized
     global _alive_instances
     global _callbacks
-    global _okib_emote
-    global _laterib_emote
-    global _noib_emote
-    global _EU_role
-    global _NA_role
-    global _KR_role
 
     guild_ib = None
     guild_com = None
@@ -554,16 +588,19 @@ async def on_ready():
     if channel_com is None:
         raise Exception("Com channel not found")
 
-    _guild = guild_ib
-    _bnet_channel = channel_bnet
-    _ent_channel = channel_ent
-    _EU_role = discord.utils.get(_guild.roles, id=766268372252884994)
-    _NA_role = discord.utils.get(_guild.roles, id=773269638116802661)
-    _KR_role = discord.utils.get(_guild.roles, id=800299277842382858)
-    _okib_emote = _client.get_emoji(OKIB_EMOJI_ID)
-    _laterib_emote = _client.get_emoji(LATERIB_EMOJI_ID)
-    _noib_emote = _client.get_emoji(NOIB_EMOJI_ID)
-    replays_load_emojis(_guild.emojis)
+    _discord_objs = DiscordObjs(
+        guild_ib, channel_bnet, channel_ent,
+        role_shaman=guild_ib.get_role(ROLE_ID_SHAMAN),
+        role_ent_ready=guild_ib.get_role(ROLE_ID_ENT_READY),
+        role_bnet_lobby=guild_ib.get_role(ROLE_ID_BNET_LOBBY),
+        role_eu=guild_ib.get_role(ROLE_ID_EU),
+        role_kr=guild_ib.get_role(ROLE_ID_KR),
+        role_na=guild_ib.get_role(ROLE_ID_NA),
+        emoji_okib=guild_ib.get_emoji(OKIB_EMOJI_ID),
+        emoji_laterib=guild_ib.get_emoji(LATERIB_EMOJI_ID),
+        emoji_noib=guild_ib.get_emoji(NOIB_EMOJI_ID),
+    )
+    replays_load_emojis(guild_ib.emojis)
 
     logging.info("Bot \"{}\" connected to Discord on guild \"{}\", pub channel \"{}\"".format(_client.user, guild_ib.name, channel_bnet.name))
     await _client.change_presence(activity=None)
@@ -611,19 +648,10 @@ async def remove_reaction(channel_id, message_id, emoji, member):
 # ==== OKIB ========================================================================================
 
 NO_POWER_MSG = "You do not have enough power to perform such an action."
-OKIB_EMOJI_ID = 506072066039087164
-LATERIB_EMOJI_ID = 624308183334125568
-NOIB_EMOJI_ID = 477544228629512193
-IB_EMOJI_ID = 451846742661398528
-IB2_EMOJI_ID = 590986772734017536
 OKIB_EMOJI_STRING = "<:okib:{}>".format(OKIB_EMOJI_ID)
 NOIB_EMOJI_STRING = "<:noib:{}>".format(NOIB_EMOJI_ID)
 OKIB_GATHER_EMOJI_STRING = "<:ib:{}><:ib2:{}>".format(IB_EMOJI_ID, IB2_EMOJI_ID)
 OKIB_GATHER_PLAYERS = 8 # not pointless - sometimes I use this for testing
-
-_okib_emote = None
-_laterib_emote = None
-_noib_emote = None
 
 _okib_channel =  None
 _okib_message_id = None
@@ -695,9 +723,9 @@ async def up(ctx):
         await message.delete()
 
     okib_message = await ctx.send(_list_content)
-    await okib_message.add_reaction(_okib_emote)
-    await okib_message.add_reaction(_laterib_emote)
-    await okib_message.add_reaction(_noib_emote)
+    await okib_message.add_reaction(_discord_objs.emoji_okib)
+    await okib_message.add_reaction(_discord_objs.emoji_laterib)
+    await okib_message.add_reaction(_discord_objs.emoji_noib)
     await ctx.message.delete()
     _okib_message_id = okib_message.id
     return _okib_message_id
@@ -714,17 +742,19 @@ async def okib(ctx, arg=None):
     global _gathered
     global _gather_time
 
+    assert _discord_objs is not None
+
     adv = False
     #PUB OKIB
-    if ctx.channel ==  _bnet_channel:
-        if ctx.message.author.roles[-1] < _guild.get_role(PUB_HOST_ID):
+    if ctx.channel == _discord_objs.channel_bnet:
+        if ctx.message.author.roles[-1] < _discord_objs.role_ent_ready:
             await ensure_display(ctx.channel.send, NO_POWER_MSG)
             return
     #/PUB OKIB
-    elif ctx.message.author.roles[-1] < _guild.get_role(PEON_ID):
+    elif ctx.message.author.roles[-1] < _discord_objs.role_ent_ready:
         await ensure_display(ctx.channel.send, NO_POWER_MSG)
         return
-    if ctx.message.author.roles[-1] >= _guild.get_role(SHAMAN_ID) or ctx.message.author == _gatherer:
+    if ctx.message.author.roles[-1] >= _discord_objs.role_shaman or ctx.message.author == _gatherer:
         adv = True
     if adv == False and arg != None:
         await ensure_display(ctx.channel.send, NO_POWER_MSG)
@@ -808,14 +838,16 @@ async def noib(ctx):
     global _okib_channel
     global _okib_message_id
 
+    assert _discord_objs is not None
+
     #PUB OKIB
-    if ctx.channel ==  _bnet_channel and ctx.message.author.roles[-1] >= _guild.get_role(PUB_HOST_ID):
+    if ctx.channel == _discord_objs.channel_bnet and ctx.message.author.roles[-1] >= _discord_objs.role_ent_ready:
         pass
     #/PUB OKIB
-    elif ctx.message.author.roles[-1] < _guild.get_role(PEON_ID):
+    elif ctx.message.author.roles[-1] < _discord_objs.role_ent_ready:
         await ensure_display(ctx.channel.send, NO_POWER_MSG)
         return
-    if ctx.message.author.roles[-1] < _guild.get_role(SHAMAN_ID) and ctx.message.author != _gatherer:
+    if ctx.message.author.roles[-1] < _discord_objs.role_shaman and ctx.message.author != _gatherer:
         if datetime.datetime.now() < (_gather_time + datetime.timedelta(hours=2)):
             await ensure_display(ctx.channel.send, NO_POWER_MSG)
             return
@@ -861,10 +893,10 @@ async def okib_on_reaction_add(channel_id, message_id, emoji, member):
     global _gathered
 
     if message_id == _okib_message_id and member.bot == False:
-        modify = False 
-        if member.roles[-1] >= _guild.get_role(PEON_ID) or _okib_channel == _bnet_channel:
+        modify = False
+        if member.roles[-1] >= _discord_objs.role_ent_ready or _okib_channel == _discord_objs.channel_bnet:
             try:
-                if emoji == _okib_emote:
+                if emoji == _discord_objs.emoji_okib:
                     if member not in _okib_members:
                         _okib_members.append(member)
                         modify = True
@@ -874,7 +906,7 @@ async def okib_on_reaction_add(channel_id, message_id, emoji, member):
                     if member in _laterib_members:
                         _laterib_members.remove(member)
 
-                elif emoji == _noib_emote:
+                elif emoji == _discord_objs.emoji_noib:
                     if member not in _noib_members:
                         _noib_members.append(member)
                         modify = True
@@ -883,7 +915,7 @@ async def okib_on_reaction_add(channel_id, message_id, emoji, member):
                         modify = True
                     if member in _laterib_members:
                         _laterib_members.remove(member)
-                elif emoji == _laterib_emote:
+                elif emoji == _discord_objs.emoji_laterib:
                     if member not in _laterib_members:
                         _laterib_members.append(member)
                     if member in _noib_members:
@@ -987,7 +1019,7 @@ def nonquery(query):
 
 @_client.command()
 async def warn(ctx, arg1, *, arg2=""):
-    if ctx.message.author.roles[-1] < _guild.get_role(SHAMAN_ID):
+    if ctx.message.author.roles[-1] < _discord_objs.role_shaman:
         await ensure_display(ctx.channel.send, NO_POWER_MSG)
         return
 
@@ -999,7 +1031,7 @@ async def warn(ctx, arg1, *, arg2=""):
 
 @_client.command()
 async def pedigree(ctx):
-    if ctx.message.author.roles[-1] < _guild.get_role(PEON_ID):
+    if ctx.message.author.roles[-1] < _discord_objs.role_ent_ready:
         await ensure_display(ctx.channel.send, NO_POWER_MSG)
         return
 
@@ -1066,13 +1098,13 @@ async def unsub(ctx, arg1=None):
 
 async def unsub2(ctx,arg1):
     if (arg1 == "EU" or arg1 == "eu"):
-        await ctx.message.author.remove_roles(_EU_role)
+        await ctx.message.author.remove_roles(_discord_objs.role_eu)
         await ctx.message.channel.send("EU has been succesfully removed from your roles")
     if (arg1 == "NA" or arg1 == "na"):
-        await ctx.message.author.remove_roles(_NA_role)
+        await ctx.message.author.remove_roles(_discord_objs.role_na)
         await ctx.message.channel.send("NA has been succesfully removed from your roles")
     if (arg1 == "KR" or arg1 == "kr"):
-        await ctx.message.author.remove_roles(_KR_role)
+        await ctx.message.author.remove_roles(_discord_objs.role_kr)
         await ctx.message.channel.send("KR has been succesfully removed from your roles")
 
 
@@ -1083,19 +1115,19 @@ async def sub(ctx, arg1=None):
 
 async def sub2(ctx, arg1):
     if (arg1 == "EU" or arg1 == "eu"):
-        await ctx.message.author.add_roles(_EU_role)
+        await ctx.message.author.add_roles(_discord_objs.role_eu)
         await ctx.message.channel.send("EU has been succesfully added in your roles")
     if (arg1 == "NA" or arg1 == "na"):
-        await ctx.message.author.add_roles(_NA_role)
+        await ctx.message.author.add_roles(_discord_objs.role_na)
         await ctx.message.channel.send("NA has been succesfully added in your roles")
     if (arg1 == "KR" or arg1 == "kr"):
-        await ctx.message.author.add_roles(_KR_role)
+        await ctx.message.author.add_roles(_discord_objs.role_kr)
         await ctx.message.channel.send("KR has been succesfully added in your roles")
 
 
 @_client.command()
 async def update_constants(ctx):
-    if ctx.message.author.roles[-1] < _guild.get_role(SHAMAN_ID):
+    if ctx.message.author.roles[-1] < _discord_objs.role_shaman:
         return
     else:
         if len(ctx.message.attachments) > 0:
@@ -1113,7 +1145,7 @@ async def update_constants(ctx):
 
 @_client.command()
 async def get_constants(ctx):
-    if ctx.message.author.roles[-1] < _guild.get_role(SHAMAN_ID):
+    if ctx.message.author.roles[-1] < _discord_objs.role_shaman:
         return
     else:
         f = open(CONSTANTS_PATH, "rb")
@@ -1123,7 +1155,7 @@ async def get_constants(ctx):
 
 @_client.command()
 async def get_logs(ctx, arg=None):
-    if ctx.message.author.roles[-1] < _guild.get_role(SHAMAN_ID):
+    if ctx.message.author.roles[-1] < _discord_objs.role_shaman:
         return
 
     logging.info("get_logs arg={}".format(arg))
@@ -1193,10 +1225,11 @@ def lobby_get_message_id(lobby):
     return globals()[key]
 
 async def lobby_create_message(lobby):
-    channel = _ent_channel if lobby.is_ent else _bnet_channel
+    assert _discord_objs is not None
 
+    channel = _discord_objs.channel_ent if lobby.is_ent else _discord_objs.channel_bnet
     try:
-        message_info = lobby.to_discord_message_info()
+        message_info = lobby.to_discord_message_info(_discord_objs.role_bnet_lobby, True)
         if message_info is None:
             logging.info("Lobby skipped: {}".format(lobby))
             return
@@ -1212,7 +1245,7 @@ async def lobby_create_message(lobby):
         traceback.print_exc()
 
 async def lobby_update_message(lobby, is_open=True):
-    channel = _ent_channel if lobby.is_ent else _bnet_channel
+    channel = _discord_objs.channel_ent if lobby.is_ent else _discord_objs.channel_bnet
 
     message_id = lobby_get_message_id(lobby)
     if message_id is not None:
@@ -1225,7 +1258,7 @@ async def lobby_update_message(lobby, is_open=True):
 
         if message is not None:
             try:
-                message_info = lobby.to_discord_message_info(is_open)
+                message_info = lobby.to_discord_message_info(_discord_objs.role_bnet_lobby, is_open)
                 if message_info is None:
                     logging.info("Lobby skipped: {}".format(lobby))
                     return
@@ -1253,7 +1286,7 @@ async def lobby_update_message(lobby, is_open=True):
             del globals()[key]
 
 async def lobby_delete_message(lobby):
-    channel = _ent_channel if lobby.is_ent else _bnet_channel
+    channel = _discord_objs.channel_ent if lobby.is_ent else _discord_objs.channel_bnet
 
     message_id = lobby_get_message_id(lobby)
     if message_id is not None:
@@ -1391,9 +1424,9 @@ async def update_ib_lobbies():
 async def getgames(ctx):
     global _open_lobbies
 
-    if ctx.channel == _ent_channel:
+    if ctx.channel == _discord_objs.channel_ent:
         is_ent_channel = True
-    elif ctx.channel == _bnet_channel:
+    elif ctx.channel == _discord_objs.channel_bnet:
         is_ent_channel = False
     else:
         return

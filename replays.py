@@ -221,5 +221,5 @@ def replays_load_emojis(guild_emojis):
             _class_emoji[Class.WARRIOR] = emoji
 
     if len(_class_emoji) != 10:
-        raise Exception("Missing class emoji, {}/10: ".format(len(_class_emoji), _class_emoji))
+        raise Exception("Missing class emoji, {}/10: ".format(len(_class_emoji)))
     logging.info("Loaded all class emoji for replays module")
