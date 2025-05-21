@@ -1,27 +1,18 @@
-name: verify
+name: Docker Image CI
 
 on:
   push:
-    branches:
-      - master
+    branches: [ "go-docker" ]
   pull_request:
-    branches:
-      - master
+    branches: [ "go-docker" ]
 
 jobs:
-  verify:
-    runs-on: [self-hosted]
-    timeout-minutes: 5
+
+  build:
+
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: python3.11 -m pip install -r ./requirements-dev.txt
-
-      - name: mypy
-        run: python3.11 -m mypy --strict .
-
-      - name: pytest
-        run: python3.11 -m pytest
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build . --file dockerfile --tag ibce-bot:$(date +%s)
