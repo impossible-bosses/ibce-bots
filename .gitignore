@@ -3,4 +3,4 @@ __pycache__/
 archive/
 logs/
 IBCE_WARN.db
-constants.py
+.env

@@ -1,0 +1,27 @@
+name: verify
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  verify:
+    runs-on: [self-hosted]
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: python3.11 -m pip install -r ./requirements-dev.txt
+
+      - name: mypy
+        run: python3.11 -m mypy --strict .
+
+      - name: pytest
+        run: python3.11 -m pytest

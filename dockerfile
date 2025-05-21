@@ -10,7 +10,6 @@ WORKDIR /usr/src/ibce-bots/
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY params.py ./
 COPY constants.py ./
 
 CMD [ "python", "./main.py" ]
