@@ -4,7 +4,9 @@ WORKDIR /usr/src/
 
 RUN apt install git
 
-RUN git clone https://github.com/impossible-bosses/ibce-bots
+#RUN git clone https://github.com/impossible-bosses/ibce-bots
+
+COPY . /usr/src/ibce-bots/
 
 WORKDIR /usr/src/ibce-bots/
 
