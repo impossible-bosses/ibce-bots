@@ -695,7 +695,7 @@ async def gather():
             logging.warning("Error sending DM to {}, {}".format(member.name, e))
             traceback.print_exc()
     
-    if _okib_channel == _discord_objs.channel_ent:
+    if _okib_channel != _discord_objs.channel_bnet:
         # Step 1: Pick a host
         selected_host = None
         # Check if the gatherer (initiator) is in the trusted list
@@ -735,7 +735,7 @@ async def gather():
 @_client.command()
 async def host(ctx):
     # shaman restricted because it is a WIP => i don't guarantee this works
-    if _okib_channel == _discord_objs.channel_ent:
+    if _okib_channel != _discord_objs.channel_bnet:
         if ctx.message.author.roles[-1] < _discord_objs.role_shaman:
             await ensure_display(ctx.channel.send, NO_POWER_MSG)
             return
