@@ -694,41 +694,84 @@ async def gather():
             #Should be an logging.error there but since this might happen quite frequently i dont want it to show as "abnormal"
             logging.warning("Error sending DM to {}, {}".format(member.name, e))
             traceback.print_exc()
-    # Step 1: Pick a host
-    selected_host = None
-    # Check if the gatherer (initiator) is in the trusted list
-    if _gatherer and _gatherer.id in {info["discord_id"] for info in TRUSTED_HOSTS.values()}:
-        selected_host = _gatherer
+    
+    if _okib_channel == _discord_objs.channel_ent:
+        # Step 1: Pick a host
+        selected_host = None
+        # Check if the gatherer (initiator) is in the trusted list
+        if _gatherer and _gatherer.id in {info["discord_id"] for info in TRUSTED_HOSTS.values()}:
+            selected_host = _gatherer
 
-     # If the gatherer is not in the trusted list, pick the next best trusted host
-    if not selected_host:
-        for host_name, host_info in TRUSTED_HOSTS.items():
-            for member in _okib_members:
-                if member.id == host_info["discord_id"]:  # Compare with stored Discord ID
-                    selected_host = member
+        # If the gatherer is not in the trusted list, pick the next best trusted host
+        if not selected_host:
+            for host_name, host_info in TRUSTED_HOSTS.items():
+                for member in _okib_members:
+                    if member.id == host_info["discord_id"]:  # Compare with stored Discord ID
+                        selected_host = member
+                        break
+                if selected_host:
                     break
-            if selected_host:
+
+        # If no trusted host is found, fallback to the first player
+        if not selected_host:
+            selected_host = _okib_members[0] 
+
+        # Step 2: Get the ENT Gaming username
+        ent_host = None
+        for host_name, host_info in TRUSTED_HOSTS.items():
+            if selected_host.id == host_info["discord_id"]:
+                ent_host = host_info["ent_name"]
                 break
 
-    # If no trusted host is found, fallback to the first player
-    if not selected_host:
-        selected_host = _okib_members[0] 
+        if ent_host is None:
+            ent_host = "defaultHost"  # Fallback if no mapping is found
 
-    # Step 2: Get the ENT Gaming username
-    ent_host = None
-    for host_name, host_info in TRUSTED_HOSTS.items():
-        if selected_host.id == host_info["discord_id"]:
-            ent_host = host_info["ent_name"]
-            break
+        await _okib_channel.send("Hosting the game on ENT with " +  ent_host + " as host ...")
 
-    if ent_host is None:
-        ent_host = "defaultHost"  # Fallback if no mapping is found
-
-    # Step 3: Start the Playwright hosting script
-    print(f"🎮 Starting game host with {ent_host} as host...")
-    await host_on_ent(ent_host)
+        # Step 3: Start the Playwright hosting script
+        logging.info(f"🎮 Starting game host with {ent_host} as host...")
+        await host_on_ent(ent_host)
     
+@_client.command()
+async def host(ctx):
+    # shaman restricted because it is a WIP => i don't guarantee this works
+    if _okib_channel == _discord_objs.channel_ent:
+        if ctx.message.author.roles[-1] < _discord_objs.role_shaman:
+            await ensure_display(ctx.channel.send, NO_POWER_MSG)
+            return
 
+        selected_host = None
+        # Check if the gatherer (initiator) is in the trusted list
+        if _gatherer and _gatherer.id in {info["discord_id"] for info in TRUSTED_HOSTS.values()}:
+            selected_host = _gatherer
+
+        # If the gatherer is not in the trusted list, pick the next best trusted host
+        if not selected_host:
+            for host_name, host_info in TRUSTED_HOSTS.items():
+                for member in _okib_members:
+                    if member.id == host_info["discord_id"]:  # Compare with stored Discord ID
+                        selected_host = member
+                        break
+                if selected_host:
+                    break
+
+        # If no trusted host is found, fallback to the first player
+        if not selected_host:
+            selected_host = _okib_members[0] 
+
+        # Step 2: Get the ENT Gaming username
+        ent_host = None
+        for host_name, host_info in TRUSTED_HOSTS.items():
+            if selected_host.id == host_info["discord_id"]:
+                ent_host = host_info["ent_name"]
+                break
+
+        if ent_host is None:
+            ent_host = "defaultHost"  # Fallback if no mapping is found
+
+        # Step 3: Start the Playwright hosting script
+        logging.info(f"🎮 Starting game host with {ent_host} as host...")
+        await host_on_ent(ent_host)
 
 async def combinator3000(*args):
     for f in args:
