@@ -11,6 +11,7 @@ COPY . /usr/src/ibce-bots/
 WORKDIR /usr/src/ibce-bots/
 
 RUN apt-get update && apt-get install -y \
+    libx11-xcb1 \
     curl \
     wget \
     gnupg \
