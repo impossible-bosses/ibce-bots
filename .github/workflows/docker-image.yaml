@@ -22,7 +22,7 @@ jobs:
     - name: Build and Push
       run: |
         docker buildx build \
-          --platform linux/arm/v6,linux/arm/v7,linux/arm64 \
+          --platform linux/amd64,linux/arm64 \
           --tag ghcr.io/impossible-bosses/ibce-bot:latest \
           --push .
             
