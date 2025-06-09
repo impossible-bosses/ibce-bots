@@ -670,6 +670,7 @@ TRUSTED_HOSTS = {
     "Daumen":{"discord_id":209817147818508300, "ent_name":"Daumen"},
     "Photon_man24:":{"discord_id":98967257949941760, "ent_name":"Photon_man24"},
     "Norwood Ranger":{"discord_id": 239817062782861313, "ent_name":"Norwood-Ranger" },
+    "Archi":{"discord_id": 230018748491235339, "ent_name":"Archimonde666" },
 }
 _okib_channel =  None
 _okib_message_id = None
