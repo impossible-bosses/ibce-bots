@@ -1,10 +1,11 @@
 import asyncio
+import os
 from playwright.async_api import async_playwright, expect
 
 # Configuration variables
 BASE_URL = "https://www.entgaming.net/"
-USERNAME = "okIbTimeToPlay"
-PASSWORD = "bCl8v5T8DxbzgG8cFsVUC"
+USERNAME = os.getenv('ENT_USERNAME')
+PASSWORD = os.getenv('ENT_PASSWORD')
 MAP_NAME = "Impossible.Bosses.v1.12.2-no-bnet.w3x"
 RECALL_MAP_NAME  = "Impossible.Bosses"
 SERVER_LOCATION = "Amsterdam (Europe)"
