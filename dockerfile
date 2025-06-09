@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.10
 
 WORKDIR /usr/src/
 
@@ -10,6 +10,7 @@ COPY . /usr/src/ibce-bots/
 
 WORKDIR /usr/src/ibce-bots/
 
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY constants.py ./
