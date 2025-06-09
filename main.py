@@ -724,7 +724,9 @@ async def gather():
                 break
 
         if ent_host is None:
-            ent_host = "defaultHost"  # Fallback if no mapping is found
+            ent_host = "defaultHost"  # Fallback if no mapping is found => can't use the game then
+            await ensure_display(ctx.channel.send, "No player with registered ENT nickname found, autohost feature disabled")
+            return
 
         await _okib_channel.send("Hosting the game on ENT with " +  ent_host + " as host ...")
 
@@ -735,43 +737,36 @@ async def gather():
 @_client.command()
 async def host(ctx):
     # shaman restricted because it is a WIP => i don't guarantee this works
-    if _okib_channel != _discord_objs.channel_bnet:
-        if ctx.message.author.roles[-1] < _discord_objs.role_shaman:
-            await ensure_display(ctx.channel.send, NO_POWER_MSG)
-            return
+    if (not _okib_channel) and (_okib_channel != _discord_objs.channel_bnet):
+        await ensure_display(ctx.channel.send, "You can't host a game without a gather")
+        return
 
-        selected_host = None
-        # Check if the gatherer (initiator) is in the trusted list
-        if _gatherer and _gatherer.id in {info["discord_id"] for info in TRUSTED_HOSTS.values()}:
-            selected_host = _gatherer
+    if not any(ctx.message.author.id == member.id for member in _okib_members):
+        await ensure_display(ctx.channel.send, "Only players signed up for the gather can demand the game to be hosted")
+        return
 
-        # If the gatherer is not in the trusted list, pick the next best trusted host
-        if not selected_host:
-            for host_name, host_info in TRUSTED_HOSTS.items():
-                for member in _okib_members:
-                    if member.id == host_info["discord_id"]:  # Compare with stored Discord ID
-                        selected_host = member
-                        break
-                if selected_host:
-                    break
+    if ctx.message.author.id not in {info["discord_id"] for info in TRUSTED_HOSTS.values()}:
+        await ensure_display(ctx.channel.send, "Only players that has registered their ENT player nickname can be the host of a game")
+        return
 
-        # If no trusted host is found, fallback to the first player
-        if not selected_host:
-            selected_host = _okib_members[0] 
+    #the player who ask shall reign
+    selected_host = ctx.message.author
 
-        # Step 2: Get the ENT Gaming username
-        ent_host = None
-        for host_name, host_info in TRUSTED_HOSTS.items():
-            if selected_host.id == host_info["discord_id"]:
-                ent_host = host_info["ent_name"]
-                break
+    # Step 2: Get the ENT Gaming username
+    ent_host = None
+    for host_name, host_info in TRUSTED_HOSTS.items():
+        if selected_host.id == host_info["discord_id"]:
+            ent_host = host_info["ent_name"]
+            break
 
-        if ent_host is None:
-            ent_host = "defaultHost"  # Fallback if no mapping is found
+    if ent_host is None:
+        ent_host = "defaultHost"  # Fallback if no mapping is found
 
-        # Step 3: Start the Playwright hosting script
-        logging.info(f"🎮 Starting game host with {ent_host} as host...")
-        await host_on_ent(ent_host)
+    await _okib_channel.send("Hosting the game on ENT with " +  ent_host + " as host ...")
+    
+    # Step 3: Start the Playwright hosting script
+    logging.info(f"🎮 Starting game host with {ent_host} as host...")
+    await host_on_ent(ent_host)
 
 async def combinator3000(*args):
     for f in args:
