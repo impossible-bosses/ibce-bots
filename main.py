@@ -654,7 +654,7 @@ NO_POWER_MSG = "You do not have enough power to perform such an action."
 OKIB_EMOJI_STRING = "<:okib:{}>".format(OKIB_EMOJI_ID)
 NOIB_EMOJI_STRING = "<:noib:{}>".format(NOIB_EMOJI_ID)
 OKIB_GATHER_EMOJI_STRING = "<:ib:{}><:ib2:{}>".format(IB_EMOJI_ID, IB2_EMOJI_ID)
-OKIB_GATHER_PLAYERS = 8 # not pointless - sometimes I use this for testing
+OKIB_GATHER_PLAYERS = int(os.getenv("OKIB_REQUIRED_PLAYERS_OVERRIDE", "8")) # not pointless - sometimes I use this for testing
 TRUSTED_HOSTS = {
     "Noway": {"discord_id": 426137665558151169, "ent_name": "Nowayouthere"},
     "patio111": {"discord_id": 243082672304422913, "ent_name": "patio-111"},
