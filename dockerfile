@@ -11,7 +11,7 @@ COPY . /usr/src/ibce-bots/
 WORKDIR /usr/src/ibce-bots/
 
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && playwright install
 
 COPY constants.py ./
 
