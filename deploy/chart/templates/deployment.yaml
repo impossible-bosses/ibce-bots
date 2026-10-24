@@ -20,10 +20,7 @@ spec:
       labels:
         {{- include "ibce-bots.labels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      {{- include "ibce-bots.pullSecrets" . | nindent 6 }}
       containers:
         - name: ibce-bots
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

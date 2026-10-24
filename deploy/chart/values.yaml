@@ -42,13 +42,25 @@ image:
   repository: ghcr.io/impossible-bosses/ibce-bot
   tag: "latest"
   pullPolicy: Always
-# The GHCR package is private by default: add a docker-registry secret here
-# unless you changed the package visibility, e.g.:
-#   kubectl create secret docker-registry ghcr \
-#     --docker-server=ghcr.io --docker-username=<user> --docker-password=<token>
-imagePullSecrets: []
-# imagePullSecrets:
-#   - name: ghcr
+# The GHCR package is private by default: either reference an existing
+# docker-registry Secret via .names, or let the chart create one from the
+# credentials below (mutually exclusive - set only one of the two).
+#   names:
+#     - name: ghcr
+# ...or:
+#   create: true
+#   username: <your GitHub username>
+#   password: <GitHub token with read:packages scope>
+imagePullSecrets:
+  # Names of pre-existing docker-registry Secrets to reference.
+  names: []
+  # Create the docker-registry Secret itself (type
+  # kubernetes.io/dockerconfigjson, docker server ghcr.io).
+  create: false
+  name: ghcr
+  # GitHub username, and a token with read:packages scope.
+  username: ""
+  password: ""
 
 # ------------------------------- Persistence --------------------------------
 persistence:

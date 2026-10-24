@@ -31,7 +31,8 @@ deployment-time placeholders:
 | `params.rebootOnUpdate` | Leave empty (see warning in values.yaml) |
 | `constants.*` | Rendered into the `constants.py` ConfigMap (guild / channel / role ids, command character) |
 | `persistence.size`, `persistence.storageClassName` | PVC sizing (empty = cluster default class) |
-| `imagePullSecrets` | Needed while the GHCR package is private |
+| `imagePullSecrets.create` + `imagePullSecrets.username` / `imagePullSecrets.password` | Creates the ghcr.io docker-registry Secret from the chart (needed while the GHCR package is private; token must have `read:packages`) |
+| `imagePullSecrets.names` | Alternative: reference pre-existing docker-registry Secrets instead |
 
 ## What is persisted (PVC `ibce-bots-data`)
 

@@ -29,6 +29,22 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- printf "ibce-bots-constants" -}}
 {{- end -}}
 
+{{- define "ibce-bots.pullSecrets" -}}
+{{- if .Values.imagePullSecrets.create -}}
+imagePullSecrets:
+  - name: {{ .Values.imagePullSecrets.name }}
+{{- else if .Values.imagePullSecrets.names -}}
+imagePullSecrets:
+  {{- range .Values.imagePullSecrets.names }}
+  {{- if eq (kindOf .) "string" }}
+  - name: {{ . }}
+  {{- else }}
+  - name: {{ .name }}
+  {{- end }}
+  {{- end }}
+{{- end -}}
+{{- end -}}
+
 {{- define "ibce-bots.pvcName" -}}
 {{- printf "ibce-bots-data" -}}
 {{- end -}}
