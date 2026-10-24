@@ -1,8 +1,10 @@
-FROM python:3.10
+FROM python:3.10-slim
 
 WORKDIR /usr/src/
 
-# git is already present in the full python:3.10 image (needed by gitpython)
+# git is required by gitpython (not included in the slim image)
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 
 #RUN git clone https://github.com/impossible-bosses/ibce-bots
 
