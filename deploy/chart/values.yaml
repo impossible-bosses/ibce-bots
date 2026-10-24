@@ -1,0 +1,76 @@
+# IbCE Bots - Helm values
+#
+# Deployment-time placeholders to fill in (or override with --set):
+#   params.botId, params.botToken          -> created as the Secret
+#   constants.*                            -> rendered into the ConfigMap (constants.py)
+
+# ---------------- FIRST: the ConfigMap (constants.py) content ----------------
+# IMPORTANT: the Discord ids are bigger than a 53-bit float, so keep them
+# as strings ("...") - Helm's YAML stage would otherwise round them.
+# They are rendered as bare int literals into constants.py.
+constants:
+  guildName: "IB CAFETERIA"
+  bnetChannelName: "pub-games"
+  entChannelName: "general-chat"
+
+  # The COM guild. These are just random numbers - enter a valid Discord server and channel.
+  comGuildId: "777162167446274048"
+  comChannelId: "77706795912383437"
+
+  shamanId: "431854421635366912"
+  peonId: "431854796748619777"
+  pubHostId: "791279611311947796"
+
+  commandCharacter: "!"
+
+# ----------------------------- PARAMS (Secret) ------------------------------
+params:
+  # The bot's COM network id (integer as in the old params.py).
+  botId: "<bot_id>"
+  # The Discord bot token.
+  botToken: "<discord_bot_token>"
+  # Empty unless you know what you are doing: any non-empty value (even
+  # "false") is truthy in main.py and triggers "sudo shutdown -r now",
+  # which does nothing in a container except fail silently. In Kubernetes,
+  # restarts are handled by the Deployment; keep it empty.
+  rebootOnUpdate: ""
+# Use an existing Secret instead of creating one from the values above.
+existingSecret: ""
+
+# --------------------------------- Image ------------------------------------
+image:
+  repository: ghcr.io/impossible-bosses/ibce-bot
+  tag: "latest"
+  pullPolicy: Always
+# The GHCR package is private by default: add a docker-registry secret here
+# unless you changed the package visibility, e.g.:
+#   kubectl create secret docker-registry ghcr \
+#     --docker-server=ghcr.io --docker-username=<user> --docker-password=<token>
+imagePullSecrets: []
+# imagePullSecrets:
+#   - name: ghcr
+
+# ------------------------------- Persistence --------------------------------
+persistence:
+  # SQLite database (IBCE_WARN.db) as a subPath file mount.
+  size: 1Gi
+  # Empty/unset -> cluster default StorageClass.
+  storageClassName: ""
+  # Empty/unset -> no pull secret.
+
+# Logs and archive/ are NOT persisted: /usr/src/ibce-bots/logs is an
+# emptyDir (wiped on pod restart) and archive/ is created on the
+# container writable layer when the app needs it.
+
+# ------------------------------- Sizing -------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Override release-naming if needed (defaults to the release name).
+nameOverride: ""
+fullnameOverride: ""

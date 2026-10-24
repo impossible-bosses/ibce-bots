@@ -1,10 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ibce-bots
-  namespace: ibce-bots
+  name: {{ include "ibce-bots.fullname" . }}
   labels:
-    app: ibce-bots
+    {{- include "ibce-bots.labels" . | nindent 4 }}
 spec:
   replicas: 1
   # Recreate instead of the default RollingUpdate: with a ReadWriteOnce PVC,
@@ -14,54 +13,55 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: ibce-bots
+      app.kubernetes.io/name: {{ include "ibce-bots.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: ibce-bots
+        {{- include "ibce-bots.labels" . | nindent 8 }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: ibce-bots
-          image: ghcr.io/impossible-bosses/ibce-bot:latest
-          imagePullPolicy: Always
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           envFrom:
             - secretRef:
-                name: ibce-bots-params
+                name: {{ include "ibce-bots.secretName" . }}
           volumeMounts:
             # SQLite db lives at the app root; subPath file mount so it is
             # persisted without hiding the application code.
             - name: data
               mountPath: /usr/src/ibce-bots/IBCE_WARN.db
               subPath: IBCE_WARN.db
-            # Writable state directories. Logs and the DB archive are
-            # ephemeral (wiped on pod restart), only the DB is persistent.
-            # Ephemeral storage for the rolling .log files.
+            # Ephemeral storage for the rolling .log files (emptyDir: wiped
+            # on pod restart). The archive/ folder is not mounted either:
+            # the app creates it on the container writable layer when the
+            # bot needs it.
             - name: logs
               mountPath: /usr/src/ibce-bots/logs
             # Hardcoded constants.py mounted from the ConfigMap. Note: the
             # in-game "!update_constants" command will not be able to rewrite
-            # this file (read-only mount); edit the ConfigMap and restart
-            # instead.
+            # this file (read-only mount); change the values and upgrade the
+            # release instead.
             - name: constants
               mountPath: /usr/src/ibce-bots/constants.py
               subPath: constants.py
           resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 256Mi
+            {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: ibce-bots-data
+            claimName: {{ include "ibce-bots.pvcName" . }}
         # Ephemeral storage: recreated empty on every pod (re)start.
         - name: logs
           emptyDir: {}
         - name: constants
           configMap:
-            name: ibce-bots-constants
+            name: {{ include "ibce-bots.configMapName" . }}
             defaultMode: 0444
             items:
               - key: constants.py

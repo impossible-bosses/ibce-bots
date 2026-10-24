@@ -1,20 +1,37 @@
-# Kubernetes deployment of ibce-bots
+# Helm chart: ibce-bots
 
-Manifests to deploy the Docker image
-(`ghcr.io/impossible-bosses/ibce-bot:latest`, built by the `go-docker`
-branch workflow) into a Kubernetes cluster.
+Deploys the Docker image (`ghcr.io/impossible-bosses/ibce-bot:latest`,
+built by the `go-docker` branch workflow) to a Kubernetes cluster. The
+manifests previously kept in this folder (namespace/pvc/secret/
+configmap/deployment yaml) are now generated from the chart.
+
+## Install
 
 ```sh
-kubectl apply -f deploy/
+helm install ibce-bots deploy/chart \
+  --namespace ibce-bots \
+  --create-namespace \
+  --set params.botId=123 \
+  --set params.botToken="<discord_bot_token>" \
+  --set constants.comGuildId="777162167446274048" \
+  --set constants.comChannelId="77706795912383437"
 ```
 
-## Before applying - populate at deployment time
+Keep the id overrides *quoted* on the command line: the Discord ids are
+bigger than a 53-bit float and values.yaml keeps them as strings for the
+same reason.
 
-| File | What to fill in |
+Values are documented in `deploy/chart/values.yaml`. The
+deployment-time placeholders:
+
+| values key | What it is |
 |---|---|
-| `deploy/secret.yaml` | `BOT_ID`, `BOT_TOKEN` placeholders. Leave `REBOOT_ON_UPDATE` empty (see warning in the file). |
-| `deploy/configmap.yaml` | `constants.py` content: guild / channel / role ids. |
-| `deploy/pvc.yaml` | `storageClassName` if your cluster needs a specific one (empty string uses the cluster default). |
+| `params.botId` | Bot's COM network id (Secret, env `BOT_ID`) |
+| `params.botToken` | Discord bot token (Secret, env `BOT_TOKEN`) |
+| `params.rebootOnUpdate` | Leave empty (see warning in values.yaml) |
+| `constants.*` | Rendered into the `constants.py` ConfigMap (guild / channel / role ids, command character) |
+| `persistence.size`, `persistence.storageClassName` | PVC sizing (empty = cluster default class) |
+| `imagePullSecrets` | Needed while the GHCR package is private |
 
 ## What is persisted (PVC `ibce-bots-data`)
 
@@ -31,41 +48,32 @@ instead of mounting the volume over the whole app:
 | Container path | Volume | Content |
 |---|---|---|
 | `/usr/src/ibce-bots/logs` | `emptyDir` | Rolling `.log` files |
-| `/usr/src/ibce-bots/archive` | container writable layer | Last copy of the DB before an update (created by the app) |
+| `/usr/src/ibce-bots/archive` | container writable layer | Last copy of the DB before an update (created by the app; dormant with a single replica) |
 
 Wiped on every pod restart. `!get_logs` only sees the log files of the
-current pod. In the single-replica Deployment, `archive/` is dormant:
-the DB archiving only triggers when another bot instance sends a
-snapshot over the COM channel (`SEND_DB`), which never happens with
-one instance.
+current pod.
 
-## Config
+## Config files inside the container
 
-- `deploy/secret.yaml` -> `BOT_ID`, `BOT_TOKEN`, `REBOOT_ON_UPDATE`
+- Secret `params` -> `BOT_ID`, `BOT_TOKEN`, `REBOOT_ON_UPDATE`
   (injected as environment variables, replacing the old `params.py`).
-- `deploy/configmap.yaml` -> `constants.py`, mounted read-only at
+- ConfigMap `constants` -> `constants.py`, mounted read-only at
   `/usr/src/ibce-bots/constants.py`.
 
 Caveat: the `!update_constants` Discord command writes to that file and
 expects to reboot the machine; with a read-only ConfigMap mount it will
-fail. Edit the ConfigMap and restart the pod instead:
+fail. Change the `constants.*` values and upgrade the release instead:
 
 ```sh
-kubectl -n ibce-bots rollout restart deployment/ibce-bots
+helm upgrade ibce-bots deploy/chart -n ibce-bots -f values.yaml
 ```
 
-## Updating
-
-`strategy: Recreate` is intentionally used (not RollingUpdate) since the
+The Deployment uses `strategy: Recreate` (not RollingUpdate) since the
 ReadWriteOnce PVC cannot be mounted by two pods at once.
 
+## Updating the image
+
 ```sh
-kubectl -n ibce-bots set image deployment/ibce-bots \
-  ibce-bots=ghcr.io/impossible-bosses/ibce-bot:<new-tag-or-sha>
+helm upgrade ibce-bots deploy/chart -n ibce-bots \
+  --reuse-values --set image.tag=<new-tag-or-sha>
 ```
-
-## Not included
-
-- No liveness/readiness probes: the bot has no HTTP endpoint; it only
-  talks to Discord.
-- No Service: the bot only makes outbound connections.
