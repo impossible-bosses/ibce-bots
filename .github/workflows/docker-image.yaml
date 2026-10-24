@@ -7,6 +7,10 @@ on:
     branches: [ "go-docker" ]
 
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
 
   build:
@@ -15,6 +19,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Set up QEMU for multi-arch builds
+      uses: docker/setup-qemu-action@v3
+
     - name: Set up Docker Buildx manually
       run: |
         docker buildx create --use
