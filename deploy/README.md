@@ -18,22 +18,26 @@ kubectl apply -f deploy/
 
 ## What is persisted (PVC `ibce-bots-data`)
 
-The bot writes most of its state inside the application root
-(`/usr/src/ibce-bots`), so individual paths are mounted from the PVC
-with `subPath` instead of mounting the volume over the whole app:
+The bot writes its state inside the application root
+(`/usr/src/ibce-bots`), so the DB is mounted from the PVC with `subPath`
+instead of mounting the volume over the whole app:
 
 | Container path | PVC subPath | Content |
 |---|---|---|
 | `/usr/src/ibce-bots/IBCE_WARN.db` | `IBCE_WARN.db` | SQLite database (file mount - the app also moves it to `archive/` on updates) |
-| `/usr/src/ibce-bots/archive` | `archive` | DB archives |
 
 ## Ephemeral storage (not persisted)
 
 | Container path | Volume | Content |
 |---|---|---|
-| `/usr/src/ibce-bots/logs` | `emptyDir` | Rolling `.log` files, wiped on every pod restart |
+| `/usr/src/ibce-bots/logs` | `emptyDir` | Rolling `.log` files |
+| `/usr/src/ibce-bots/archive` | container writable layer | Last copy of the DB before an update (created by the app) |
 
-`!get_logs` only sees the log files of the current pod.
+Wiped on every pod restart. `!get_logs` only sees the log files of the
+current pod. In the single-replica Deployment, `archive/` is dormant:
+the DB archiving only triggers when another bot instance sends a
+snapshot over the COM channel (`SEND_DB`), which never happens with
+one instance.
 
 ## Config
 

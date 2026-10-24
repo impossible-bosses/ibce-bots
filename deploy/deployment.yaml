@@ -33,11 +33,8 @@ spec:
             - name: data
               mountPath: /usr/src/ibce-bots/IBCE_WARN.db
               subPath: IBCE_WARN.db
-            # Writable state directories. Logs are ephemeral (emptyDir: wiped
-            # on pod restart), only the DB and its archives are persistent.
-            - name: data
-              mountPath: /usr/src/ibce-bots/archive
-              subPath: archive
+            # Writable state directories. Logs and the DB archive are
+            # ephemeral (wiped on pod restart), only the DB is persistent.
             # Ephemeral storage for the rolling .log files.
             - name: logs
               mountPath: /usr/src/ibce-bots/logs
