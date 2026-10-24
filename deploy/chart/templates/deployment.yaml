@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ibce-bots.fullname" . }}
+  labels:
+    {{- include "ibce-bots.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  # Recreate instead of the default RollingUpdate: with a ReadWriteOnce PVC,
+  # the new ReplicaSet pod cannot mount the volume while the old pod still
+  # holds it.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ibce-bots.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "ibce-bots.labels" . | nindent 8 }}
+    spec:
+      {{- include "ibce-bots.pullSecrets" . | nindent 6 }}
+      containers:
+        - name: ibce-bots
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "ibce-bots.secretName" . }}
+          volumeMounts:
+            # SQLite db lives at the app root; subPath file mount so it is
+            # persisted without hiding the application code.
+            - name: data
+              mountPath: /usr/src/ibce-bots/IBCE_WARN.db
+              subPath: IBCE_WARN.db
+            # Ephemeral storage for the rolling .log files (emptyDir: wiped
+            # on pod restart). The archive/ folder is not mounted either:
+            # the app creates it on the container writable layer when the
+            # bot needs it.
+            - name: logs
+              mountPath: /usr/src/ibce-bots/logs
+            # Hardcoded constants.py mounted from the ConfigMap. Note: the
+            # in-game "!update_constants" command will not be able to rewrite
+            # this file (read-only mount); change the values and upgrade the
+            # release instead.
+            - name: constants
+              mountPath: /usr/src/ibce-bots/constants.py
+              subPath: constants.py
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "ibce-bots.pvcName" . }}
+        # Ephemeral storage: recreated empty on every pod (re)start.
+        - name: logs
+          emptyDir: {}
+        - name: constants
+          configMap:
+            name: {{ include "ibce-bots.configMapName" . }}
+            defaultMode: 0444
+            items:
+              - key: constants.py
+                path: constants.py

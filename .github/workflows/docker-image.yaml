@@ -1,0 +1,45 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "go-docker" ]
+  pull_request:
+    branches: [ "go-docker" ]
+
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    # NOTE: the repo's Actions policy only allows github-owned actions
+    # (github_owned_allowed: true, no patterns, verified not allowed), so
+    # docker/setup-qemu-action cannot be used as a marketplace action.
+    # Install the QEMU emulators directly with tonistiigi/binfmt instead
+    # (the same tool that action wraps); plain `run:` steps are not
+    # restricted by the allowlist.
+    - name: Set up QEMU for multi-arch builds
+      run: docker run --privileged --rm tonistiigi/binfmt --install all
+
+    - name: Set up Docker Buildx manually
+      run: |
+        docker buildx create --use
+        docker buildx inspect --bootstrap
+          
+    - name: Log in to registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Build and Push
+      run: |
+        docker buildx build \
+          --platform linux/arm/v6,linux/arm/v7,linux/arm64 \
+          --tag ghcr.io/impossible-bosses/ibce-bot:latest \
+          --push .
+            

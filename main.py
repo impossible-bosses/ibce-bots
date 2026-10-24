@@ -24,7 +24,9 @@ LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 LOG_FILE_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 # PARAMS (PRIVATE)
-from params import BOT_ID, BOT_TOKEN, REBOOT_ON_UPDATE
+BOT_ID = int(os.getenv('BOT_ID'))
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+REBOOT_ON_UPDATE = os.getenv('REBOOT_ON_UPDATE')
 
 # CONSTANTS (PUBLIC)
 import constants
