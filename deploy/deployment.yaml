@@ -33,13 +33,14 @@ spec:
             - name: data
               mountPath: /usr/src/ibce-bots/IBCE_WARN.db
               subPath: IBCE_WARN.db
-            # Writable state directories.
-            - name: data
-              mountPath: /usr/src/ibce-bots/logs
-              subPath: logs
+            # Writable state directories. Logs are ephemeral (emptyDir: wiped
+            # on pod restart), only the DB and its archives are persistent.
             - name: data
               mountPath: /usr/src/ibce-bots/archive
               subPath: archive
+            # Ephemeral storage for the rolling .log files.
+            - name: logs
+              mountPath: /usr/src/ibce-bots/logs
             # Hardcoded constants.py mounted from the ConfigMap. Note: the
             # in-game "!update_constants" command will not be able to rewrite
             # this file (read-only mount); edit the ConfigMap and restart
@@ -58,6 +59,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: ibce-bots-data
+        # Ephemeral storage: recreated empty on every pod (re)start.
+        - name: logs
+          emptyDir: {}
         - name: constants
           configMap:
             name: ibce-bots-constants
