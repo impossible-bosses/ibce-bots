@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ibce-bots-constants
+  namespace: ibce-bots
+  labels:
+    app: ibce-bots
+data:
+  # Content of the hardcoded constants.py mounted into the container.
+  # <== adjust guild / channel / role ids at deployment time.
+  constants.py: |
+    GUILD_NAME = "IB CAFETERIA"
+    BNET_CHANNEL_NAME = "pub-games"
+    ENT_CHANNEL_NAME = "general-chat"
+
+    # The COM guild. These are just random numbers - enter a valid Discord server and channel.
+    COM_GUILD_ID = 777162167446274048
+    COM_CHANNEL_ID = 77706795912383437
+
+    SHAMAN_ID = 431854421635366912
+    PEON_ID = 431854796748619777
+    PUB_HOST_ID = 791279611311947796
+
+    COMMAND_CHARACTER = '!'

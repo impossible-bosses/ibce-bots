@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ibce-bots
+  namespace: ibce-bots
+  labels:
+    app: ibce-bots
+spec:
+  replicas: 1
+  # Recreate instead of the default RollingUpdate: with a ReadWriteOnce PVC,
+  # the new ReplicaSet pod cannot mount the volume while the old pod still
+  # holds it.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ibce-bots
+  template:
+    metadata:
+      labels:
+        app: ibce-bots
+    spec:
+      containers:
+        - name: ibce-bots
+          image: ghcr.io/impossible-bosses/ibce-bot:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: ibce-bots-params
+          volumeMounts:
+            # SQLite db lives at the app root; subPath file mount so it is
+            # persisted without hiding the application code.
+            - name: data
+              mountPath: /usr/src/ibce-bots/IBCE_WARN.db
+              subPath: IBCE_WARN.db
+            # Writable state directories.
+            - name: data
+              mountPath: /usr/src/ibce-bots/logs
+              subPath: logs
+            - name: data
+              mountPath: /usr/src/ibce-bots/archive
+              subPath: archive
+            # Hardcoded constants.py mounted from the ConfigMap. Note: the
+            # in-game "!update_constants" command will not be able to rewrite
+            # this file (read-only mount); edit the ConfigMap and restart
+            # instead.
+            - name: constants
+              mountPath: /usr/src/ibce-bots/constants.py
+              subPath: constants.py
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ibce-bots-data
+        - name: constants
+          configMap:
+            name: ibce-bots-constants
+            defaultMode: 0444
+            items:
+              - key: constants.py
+                path: constants.py
