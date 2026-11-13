@@ -24,6 +24,7 @@ class Class(Enum):
     PRIEST = "Priest"
     RANGER = "Ranger"
     ROGUE = "Rogue"
+    SHAMAN = "Shaman"
     WARLOCK = "Warlock"
     WARRIOR = "Warrior"
 
@@ -188,7 +189,7 @@ class ReplayData:
             title += " ({}/{})".format(self.boss_kills, max_bosses_in_difficulty(self.difficulty))
         players_str = ""
         for player in self.players:
-            players_str += "{} {}\n".format(_class_emoji[player.class_], player.name)
+            players_str += "{} {}\n".format(_class_emoji.get(player.class_, "[Shaman]" if player.class_ == Class.SHAMAN else player.class_.value), player.name)
 
         embed = discord.Embed(title=title, description=players_str, url=replay_id_to_url(self.id))
         embed.set_footer(text=self.map)
@@ -199,6 +200,8 @@ def replays_load_emojis(guild_emojis):
     _class_emoji = {}
 
     for emoji in guild_emojis:
+        if emoji.name.lower() == "shaman":
+            _class_emoji[Class.SHAMAN] = emoji
         if emoji.name == "dk":
             _class_emoji[Class.DK] = emoji
         if emoji.name == "druid":
@@ -220,6 +223,6 @@ def replays_load_emojis(guild_emojis):
         if emoji.name == "demonwar":
             _class_emoji[Class.WARRIOR] = emoji
 
-    if len(_class_emoji) != 10:
+    if any(c not in _class_emoji for c in Class if c != Class.SHAMAN):
         raise Exception("Missing class emoji, {}/10: ".format(len(_class_emoji)))
     logging.info("Loaded all class emoji for replays module")

@@ -13,6 +13,8 @@ class MapVersion:
         self.slots = slots
 
 KNOWN_VERSIONS = [
+    MapVersion("Impossible.Bosses.v1.13.1", deprecated=False),
+    MapVersion("Impossible.Bosses.v1.13.0", deprecated=False),
     MapVersion("Impossible.Bosses.v1.12.3", deprecated=False),
     MapVersion("Impossible.Bosses.v1.12.3-no-bnet", ent_only=True, deprecated=False),
     MapVersion("Impossible.Bosses.v1.12.2"),
@@ -216,3 +218,4 @@ class Lobby:
             "message": message,
             "embed": embed,
         }
+
