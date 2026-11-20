@@ -13,6 +13,8 @@ class MapVersion:
         self.slots = slots
 
 KNOWN_VERSIONS = [
+    MapVersion("Impossible.Bosses.v1.13.3", deprecated=False),
+    MapVersion("Impossible.Bosses.v1.13.2", deprecated=False),
     MapVersion("Impossible.Bosses.v1.13.1", deprecated=False),
     MapVersion("Impossible.Bosses.v1.13.0", deprecated=False),
     MapVersion("Impossible.Bosses.v1.12.3", deprecated=False),
